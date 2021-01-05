@@ -33,8 +33,7 @@ def create_race_data():
 # Income / Unemployment Data
 
 def create_inc_unemp_data():
-    
-    income_data = pd.read_excel('https://www.ers.usda.gov/webdocs/DataFiles/48747/Unemployment.xls?v=2512', skiprows = 7)[['area_name','Unemployment_rate_2019', 'Median_Household_Income_2018']].reset_index(drop = True).rename(columns = {'area_name': 'County Name', 'Unemployment_rate_2019': '% Unemployed', 'Median_Household_Income_2018':'Median Household Income'})
+    income_data = pd.read_excel('https://www.ers.usda.gov/webdocs/DataFiles/48747/Unemployment.xls?v=2512', skiprows = 4)[['area_name','Unemployment_rate_2019', 'Median_Household_Income_2019']].reset_index(drop = True).rename(columns = {'area_name': 'County Name', 'Unemployment_rate_2019': '% Unemployed', 'Median_Household_Income_2019':'Median Household Income'})
     
     income_data['% Unemployed'] = income_data['% Unemployed'].round(2)
     
@@ -191,14 +190,14 @@ def create_covid_pop_data():
     cases['countyFIPS'] = cases['countyFIPS'].apply(lambda value: '0' + str(value) if len(str(value)) == 4 else str(value))
     cases = cases[cases['County Name'] != 'Statewide Unallocated'].reset_index(drop = True)
     cases['County Name'] = cases['County Name']  + ', ' + cases['State']
-    cases.drop(['12/28/20','12/29/20','12/30/20','12/31/20','1/1/21','1/2/21'], axis = 1, inplace = True)
+    cases.drop(['12/28/20','12/29/20','12/30/20','12/31/20','1/1/21','1/2/21', '1/3/21'], axis = 1, inplace = True)
 
     # Creates the cumulative deaths dataframe
     deaths = pd.read_csv(deaths_url)
     deaths['countyFIPS'] = deaths['countyFIPS'].apply(lambda value: '0' + str(value) if len(str(value)) == 4 else str(value))
     deaths = deaths[deaths['County Name'] != 'Statewide Unallocated'].reset_index(drop = True)
     deaths['County Name'] = deaths['County Name']  + ', ' + deaths['State']
-    deaths.drop(['12/28/20','12/29/20', '12/30/20', '12/31/20', '1/1/21', '1/2/21'], axis = 1, inplace = True)
+    deaths.drop(['12/28/20','12/29/20', '12/30/20', '12/31/20', '1/1/21', '1/2/21', '1/3/21'], axis = 1, inplace = True)
 
     # Converts '\n' value for McDowell County, NC to the same as November and converts random string values to integers in Deaths dataset
 
