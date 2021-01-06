@@ -2,7 +2,7 @@
 
 A detailed, county-level dataset with data relating to the COVID-19 pandemic. Read more about the data and some analysis I performed here: https://medium.com/@kabirmoghe/county-based-covid-19-dataset-and-analytical-trends-ff1617030ba8. 
 
-Above, you can access the code that creates and compiles the dataset, as well as the COVID-19 dataset as of 10/7/2020, and some of the county-level stats used to make the full dataset.
+Above, you can access the code that creates and compiles the dataset, and it us up-to-date as of January 2021.
 
 The dataset itself includes infecion and mortality rates (per 100,000) for each month, features about the county itself (population, population density, race demographics, median household income, unemployment, and education), and a form of government intervention (the presence of a mandatory mask requirement). The dataset also has FIP codes of counties and states, making it easy to create maps and charts. 
 
