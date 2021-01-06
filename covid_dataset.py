@@ -480,6 +480,8 @@ def combiner():
 
 def main_function():
 
+    # Puts everything together
+
     data = combiner()    
 
     return data
