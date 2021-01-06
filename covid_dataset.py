@@ -427,6 +427,7 @@ def create_covid_pop_data():
                 }
         la_mo = [no_mo[val] for val in [latest_month]][0]
         
+        
         if c_or_d == 'c':
             latest_col = df2['{mo} Cases (2021)'.format(mo = la_mo)]
             predicted_cases = (latest_col / perc_done).apply(lambda value: int(value))
@@ -460,7 +461,39 @@ def create_covid_pop_data():
             covid_data = covid_data.drop([month + ' Cases (2020)', month + ' Deaths (2020)'], axis = 1)
         if (month + ' Cases (2021)') and (month + ' Deaths (2021)') in covid_data.columns:
             covid_data = covid_data.drop([month + ' Cases (2021)', month + ' Deaths (2021)'], axis = 1)
+    
+    no_to_mo = {1:'January',
+                 2:'February',
+                 3:'March',
+                 4:'April',
+                 5:'May',
+                 6:'June',
+                 7:'July',
+                 8:'August',
+                 9:'September',
+                 10:'October',
+                 11:'November',
+                 12:'December'
+                }
+    
+    latest_date = cases.columns[-1].split('/')
+    
+    latest_day = int(latest_date[1])
 
+    latest_month = int(latest_date[0])
+
+    latest_year = int(latest_date[2])
+    
+    latest_month_name = no_to_mo[latest_month]
+
+    column_map = {'countyFIPS': 'County FIPS', 
+                  'stateFIPS': 'State FIPS', 
+                  '{} (2021) Infection Rate (per 100,000)'.format(latest_month_name): '{} (2021) Infection Rate (per 100,000 as of {}/{}/{})'.format(latest_month_name, latest_month, latest_day, latest_year),
+                  '{} (2021) Mortality Rate (per 100,000)'.format(latest_month_name): '{} (2021) Mortality Rate (per 100,000, as of {}/{}/{})'.format(latest_month_name, latest_month, latest_day, latest_year)
+                 }
+    
+    covid_data = covid_data.rename(columns = column_map)
+    
     return covid_data
 
 def combiner():
