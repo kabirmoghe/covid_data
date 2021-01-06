@@ -190,18 +190,20 @@ def create_covid_pop_data():
     cases['countyFIPS'] = cases['countyFIPS'].apply(lambda value: '0' + str(value) if len(str(value)) == 4 else str(value))
     cases = cases[cases['County Name'] != 'Statewide Unallocated'].reset_index(drop = True)
     cases['County Name'] = cases['County Name']  + ', ' + cases['State']
-    cases.drop(['12/28/20','12/29/20','12/30/20','12/31/20','1/1/21','1/2/21', '1/3/21'], axis = 1, inplace = True)
+    
+    cases2020 = cases.iloc[:,:349]
+    cases2021 = cases.iloc[:,349:]
 
     # Creates the cumulative deaths dataframe
     deaths = pd.read_csv(deaths_url)
     deaths['countyFIPS'] = deaths['countyFIPS'].apply(lambda value: '0' + str(value) if len(str(value)) == 4 else str(value))
     deaths = deaths[deaths['County Name'] != 'Statewide Unallocated'].reset_index(drop = True)
     deaths['County Name'] = deaths['County Name']  + ', ' + deaths['State']
-    deaths.drop(['12/28/20','12/29/20', '12/30/20', '12/31/20', '1/1/21', '1/2/21', '1/3/21'], axis = 1, inplace = True)
 
+    deaths2020 = deaths.iloc[:,:349]
+    deaths2021 = deaths.iloc[:,349:]
+    
     # Converts '\n' value for McDowell County, NC to the same as November and converts random string values to integers in Deaths dataset
-
-    deaths.iloc[1948, -1] = 38
 
     def str_int(val):
         if type(val) == str:
@@ -209,7 +211,7 @@ def create_covid_pop_data():
         else:
             return val
 
-    deaths.iloc[:, -1] = deaths.iloc[:, -1].apply(str_int)
+    #deaths.iloc[:, -1] = deaths.iloc[:, -1].apply(str_int)
 
     # Creates the population dataframe
     
@@ -218,49 +220,82 @@ def create_covid_pop_data():
     pop = pop[pop['County Name'] != 'Statewide Unallocated'].reset_index(drop = True)['population']
     pop = pd.DataFrame(pop).rename(columns = {'population':'Population'})
 
-    # Creates 'dates' as a list of all of the days past
+    # Creates 'dates' as a list of all of the days past in 2020
 
-    c_dates = cases.iloc[:,4:].columns.values
+    c_dates2020 = cases2020.iloc[:,4:].columns.values
+    
+    c_dates2021 = cases2021.columns.values
 
-    d_dates = deaths.iloc[:,4:].columns.values
+    d_dates2020 = deaths2020.iloc[:,4:].columns.values
+
+    d_dates2021 = deaths2021.columns.values
 
     # Defines the function to compile the daily data into monthly data
 
     def m_compiler(df, c_or_d):
+        
+        year = df.columns[-1].split('/')[2]
+        
         c_df = df.copy(deep = True)
         
-        c_mos = {1:'January Cases', 2:'February Cases', 3:'March Cases', 4:'April Cases', 5:'May Cases', 6:'June Cases', 7:'July Cases', 8:'August Cases', 9:'September Cases', 10:'October Cases', 11:'November Cases', 12:'December Cases'}
+        c_mos_2020 = {1:'January Cases (2020)', 2:'February Cases (2020)', 3:'March Cases (2020)', 4:'April Cases (2020)', 5:'May Cases (2020)', 6:'June Cases (2020)', 7:'July Cases (2020)', 8:'August Cases (2020)', 9:'September Cases (2020)', 10:'October Cases (2020)', 11:'November Cases (2020)', 12:'December Cases (2020)'}
+        c_mos_2021 = {1:'January Cases (2021)', 2:'February Cases (2021)', 3:'March Cases (2021)', 4:'April Cases (2021)', 5:'May Cases (2021)', 6:'June Cases (2021)', 7:'July Cases (2021)', 8:'August Cases (2021)', 9:'September Cases (2021)', 10:'October Cases (2021)', 11:'November Cases (2021)', 12:'December Cases (2021)'}
         
-        d_mos = {1:'January Deaths', 2:'February Deaths', 3:'March Deaths', 4:'April Deaths', 5:'May Deaths', 6:'June Deaths', 7:'July Deaths', 8:'August Deaths', 9:'September Deaths', 10:'October Deaths', 11:'November Deaths', 12:'December Deaths'}
+        d_mos_2020 = {1:'January Deaths (2020)', 2:'February Deaths (2020)', 3:'March Deaths (2020)', 4:'April Deaths (2020)', 5:'May Deaths (2020)', 6:'June Deaths (2020)', 7:'July Deaths (2020)', 8:'August Deaths (2020)', 9:'September Deaths (2020)', 10:'October Deaths (2020)', 11:'November Deaths (2020)', 12:'December Deaths (2020)'}
+        d_mos_2021 = {1:'January Deaths (2021)', 2:'February Deaths (2021)', 3:'March Deaths (2021)', 4:'April Deaths (2021)', 5:'May Deaths (2021)', 6:'June Deaths (2021)', 7:'July Deaths (2021)', 8:'August Deaths (2021)', 9:'September Deaths (2021)', 10:'October Deaths (2021)', 11:'November Deaths (2021)', 12:'December Deaths (2021)'}
         
-        c_mo_ls = list(range(int(c_dates[-1].split('/')[0])))
+        c_mo_ls2020 = list(range(int(c_dates2020[-1].split('/')[0])))
+        c_mo_ls2021 = list(range(int(c_dates2021[-1].split('/')[0])))
         
-        d_mo_ls = list(range(int(d_dates[-1].split('/')[0])))
+        d_mo_ls2020 = list(range(int(d_dates2020[-1].split('/')[0])))
+        d_mo_ls2021 = list(range(int(d_dates2021[-1].split('/')[0])))
         
         if c_or_d == 'c':
-            for i in range(int(c_dates[-1].split('/')[0])):
-                for date in c_dates:
-                    while int(date.split('/')[0]) < i + 2:
-                        c_mo_ls.pop(i)
-                        c_mo_ls.insert(i,date)
-                        break
+            if year == '20':
+                for i in range(int(c_dates2020[-1].split('/')[0])):
+                    for date in c_dates2020:
+                        while int(date.split('/')[0]) < i + 2:
+                            c_mo_ls2020.pop(i)
+                            c_mo_ls2020.insert(i,date)
+                            break
         
-            monthly_df = c_df[c_mo_ls]
+                monthly_df = c_df[c_mo_ls2020]
         
-            c_df.drop(c_df.iloc[:,4:], axis = 1, inplace = True)
-        
-        elif c_or_d == 'd':
-            for i in range(int(d_dates[-1].split('/')[0])):
-                for date in d_dates:
-                    while int(date.split('/')[0]) < i + 2:
-                        d_mo_ls.pop(i)
-                        d_mo_ls.insert(i,date)
-                        break
-        
-            monthly_df = c_df[d_mo_ls]
-        
-            c_df.drop(c_df.iloc[:,4:], axis = 1, inplace = True)
+                c_df.drop(c_df.iloc[:,4:], axis = 1, inplace = True)
                 
+            else:
+                for i in range(int(c_dates2021[-1].split('/')[0])):
+                    for date in c_dates2021:
+                        while int(date.split('/')[0]) < i + 2:
+                            c_mo_ls2021.pop(i)
+                            c_mo_ls2021.insert(i,date)
+                            break
+        
+                monthly_df = c_df[c_mo_ls2021]
+                
+        elif c_or_d == 'd':
+            if year == '20':
+                for i in range(int(d_dates2020[-1].split('/')[0])):
+                    for date in d_dates2020:
+                        while int(date.split('/')[0]) < i + 2:
+                            d_mo_ls2020.pop(i)
+                            d_mo_ls2020.insert(i,date)
+                            break
+        
+                monthly_df = c_df[d_mo_ls2020]
+        
+                c_df.drop(c_df.iloc[:,4:], axis = 1, inplace = True)
+            
+            else:
+                for i in range(int(d_dates2021[-1].split('/')[0])):
+                    for date in d_dates2021:
+                        while int(date.split('/')[0]) < i + 2:
+                            d_mo_ls2021.pop(i)
+                            d_mo_ls2021.insert(i,date)
+                            break
+        
+                monthly_df = c_df[d_mo_ls2021]
+             
         def num_to_mo(cols):
             sing_nums = cols.map(lambda col: int(col.split('/')[0]))
             return sing_nums
@@ -268,28 +303,51 @@ def create_covid_pop_data():
         monthly_df.columns = num_to_mo(monthly_df.columns)
         
         if c_or_d == 'c':
-            monthly_df.columns = monthly_df.columns.map(c_mos)
+            if year == '20':
+                monthly_df.columns = monthly_df.columns.map(c_mos_2020)
+            else:
+                monthly_df.columns = monthly_df.columns.map(c_mos_2021)
         
         if c_or_d == 'd':
-            monthly_df.columns = monthly_df.columns.map(d_mos)
-       
-        c_df = pd.concat([c_df, monthly_df], axis = 1)
-            
-        split1 = c_df.iloc[:,:4]
-        split2 = c_df.iloc[:,4:]
+            if year == '20':
+                monthly_df.columns = monthly_df.columns.map(d_mos_2020)
+            else:
+                monthly_df.columns = monthly_df.columns.map(d_mos_2021)   
                 
-        for i in range(1,len(split2.columns)):
-            split2.iloc[:,-i] = split2.iloc[:,-i] - split2.iloc[:,-i-1]
+        
+        if year == '20':
+            
+            c_df = pd.concat([c_df, monthly_df], axis = 1)
+            
+            split1 = c_df.iloc[:,:4]
+            split2 = c_df.iloc[:,4:]
+        
+            for i in range(1,len(split2.columns)):
+                split2.iloc[:,-i] = split2.iloc[:,-i] - split2.iloc[:,-i-1]
 
-        c_df = pd.concat([split1, split2], axis = 1)
+            c_df = pd.concat([split1, split2], axis = 1)
+        
+        else:
+            c_df = monthly_df
+        
+            if len(c_df.columns) == 1:
+                if c_or_d == 'c':
+                    c_df.iloc[:,0] = c_df.iloc[:,0] - cases2020.iloc[:,-1]
+                else:
+                    c_df.iloc[:,0] = c_df.iloc[:,0] - deaths2020.iloc[:,-1]
+            else:
+                for i in range(1,len(c_df.columns)):
+                    if i == (len(c_df.columns) - 1):
+                        if c_or_d == 'c':
+                            c_df.iloc[:,-i] = c_df.iloc[:, -i] - cases2020.iloc[:,-1]
+                        else:
+                            c_df.iloc[:,-i] = c_df.iloc[:, -i] - deaths2020.iloc[:,-1]
         
         return c_df
     
-    # Cumulative data 
+    c_mo_us = pd.concat([m_compiler(cases2020, 'c'), m_compiler(cases2021, 'c')], axis = 1)
+    d_mo_us = pd.concat([m_compiler(deaths2020, 'd').drop(['countyFIPS', 'County Name', 'State', 'stateFIPS'], axis = 1), m_compiler(deaths2021, 'd')], axis = 1)
     
-    c_mo_us = m_compiler(cases, 'c')
-    d_mo_us = m_compiler(deaths, 'd').drop(['countyFIPS', 'County Name', 'State', 'stateFIPS'], axis = 1)
-
     covid_data = c_mo_us.iloc[:, :4]
     covid_data = pd.concat([covid_data, pop], axis = 1)
     c_mo_us.drop(c_mo_us.iloc[:,:4], axis = 1, inplace = True)
@@ -303,7 +361,7 @@ def create_covid_pop_data():
 
     for col in cd.columns: 
         col_cont = col.split()
-        if len(col_cont) == 2:
+        if len(col_cont) == 3:
             if col_cont[1] == 'Cases':
                 c_cols.append(col)
             elif col_cont[1] == 'Deaths': 
@@ -311,16 +369,16 @@ def create_covid_pop_data():
         
     c_rates = pd.DataFrame()
     d_rates = pd.DataFrame()
-
+    
     for c_mo in c_cols:
-        c_rates[c_mo.split()[0] + ' Infection Rate (per 100,000)'] = round(cd[c_mo]/cd['Population'] * 100000, 2)
+        c_rates[c_mo.split()[0] + ' ' + c_mo.split()[2] + ' Infection Rate (per 100,000)'] = round(cd[c_mo]/cd['Population'] * 100000, 2)
     
     for d_mo in d_cols:
-        d_rates[d_mo.split()[0] + ' Mortality Rate (per 100,000)'] = round(cd[d_mo]/cd['Population'] * 100000, 2)
-    
+        d_rates[d_mo.split()[0] + ' ' + d_mo.split()[2] + ' Mortality Rate (per 100,000)'] = round(cd[d_mo]/cd['Population'] * 100000, 2)
+        
     for i in range(len(c_mo_us.columns)):
         covid_data = pd.concat([covid_data, c_mo_us.iloc[:,i:i+1], d_mo_us.iloc[:, i:i+1], c_rates.iloc[:, i:i+1], d_rates.iloc[:, i:i+1]], axis = 1)    
-
+    
     def projector(df, df2, c_or_d):
         mo_days = {1 : 31,
                    2 : (28,29),
@@ -339,11 +397,11 @@ def create_covid_pop_data():
         latest_date = df.columns[-1].split('/')
     
         latest_day = int(latest_date[1])
-    
+
         latest_month = int(latest_date[0])
-    
+
         latest_year = int(latest_date[2])
-    
+        
         if latest_month != 2:
             tot_days = [mo_days[val] for val in [latest_month]][0]
         else:
@@ -368,27 +426,28 @@ def create_covid_pop_data():
                  12:'December'
                 }
         la_mo = [no_mo[val] for val in [latest_month]][0]
-    
+        
         if c_or_d == 'c':
-            latest_col = df2['{mo} Cases'.format(mo = la_mo)]
+            latest_col = df2['{mo} Cases (2021)'.format(mo = la_mo)]
             predicted_cases = (latest_col / perc_done).apply(lambda value: int(value))
             predicted_i_r = round(predicted_cases/df2['Population'] * 100000, 2)
             predictions = pd.concat([predicted_cases,predicted_i_r], axis = 1)
-            predictions.columns = ['Predicted {mo} Cases'.format(mo = la_mo), 'Predicted {mo} Infection Rate (per 100,000)'.format(mo = la_mo)]
-    
+            predictions.columns = ['Predicted {mo} {yr} Cases'.format(mo = la_mo, yr = '(2021)'), 'Predicted {mo} {yr} Infection Rate (per 100,000)'.format(mo = la_mo, yr = '(2021)')]
+
             return predictions
+    
         else:
-            latest_col = df2['{mo} Deaths'.format(mo = la_mo)]
+            latest_col = df2['{mo} Deaths (2021)'.format(mo = la_mo)]
             predicted_deaths = (latest_col / perc_done).apply(lambda value: int(value))
             predicted_m_r = round(predicted_deaths/df2['Population'] * 100000, 2)
             predictions = pd.concat([predicted_deaths,predicted_m_r], axis = 1)
-            predictions.columns = ['Predicted {mo} Deaths'.format(mo = la_mo), 'Predicted {mo} Mortality Rate (per 100,000)'.format(mo = la_mo)]
-    
+            predictions.columns = ['Predicted {mo} {yr} Deaths'.format(mo = la_mo, yr = '(2021)'), 'Predicted {mo} {yr} Mortality Rate (per 100,000)'.format(mo = la_mo, yr = '(2021)')]    
+        
             return predictions
     
-    pred_inf = projector(cases, covid_data, 'c')
-    pred_dth = projector(deaths, covid_data, 'd')
-
+    pred_inf = projector(cases2021, covid_data, 'c')
+    pred_dth = projector(deaths2021, covid_data, 'd')
+    
     covid_data = pd.concat([covid_data, pred_inf, pred_dth], axis = 1)
 
     covid_data['Cumulative Infection Rate (per 100,000)'] = round(c_rates.mean(axis = 1), 2)
@@ -397,8 +456,11 @@ def create_covid_pop_data():
     months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
     for month in months:
-        covid_data = covid_data.drop([month + ' Cases', month + ' Deaths'], axis = 1)
-    
+        if (month + ' Cases (2020)') and (month + ' Deaths (2020)') in covid_data.columns:
+            covid_data = covid_data.drop([month + ' Cases (2020)', month + ' Deaths (2020)'], axis = 1)
+        if (month + ' Cases (2021)') and (month + ' Deaths (2021)') in covid_data.columns:
+            covid_data = covid_data.drop([month + ' Cases (2021)', month + ' Deaths (2021)'], axis = 1)
+
     return covid_data
 
 def combiner():
