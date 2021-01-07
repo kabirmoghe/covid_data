@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 
 # Creates COVID-19 County Level Dataset
 
@@ -98,8 +100,6 @@ def create_edu_data():
 
 # Creates a dataframe of statewide data about mask reqs
 
-#link = https://masks4all.co/what-states-require-masks/ ; you must click the "Get the data" button and save it as 'data-AD5p1.csv', * and then change the path of the file in the line below accordingly *
-
 def create_mask_data():
     states = {
         'District of Columbia': 'DC',
@@ -156,24 +156,51 @@ def create_mask_data():
         'Wyoming': 'WY',
     }
     
-    mask_data = pd.read_csv('/Users/kabirmoghe/Desktop/Datasets/data-AD5p1.csv')
+    mainContent = requests.get("https://www.aarp.org/health/healthy-living/info-2020/states-mask-mandates-coronavirus.html")
 
-    mask_data['State.'] = mask_data['State.'].apply(lambda value: value[1:].split(']')[0])
+    mask_html = BeautifulSoup(mainContent.text,'lxml')
     
-    mask_data = mask_data.rename(columns = {'State.':'State'})
+    ps = []
+
+    for paragraph in mask_html.find_all('p'):
+        ps.append(paragraph.text.strip())
     
-    mask_data['State'] = mask_data['State'].map(states)
+    mandates = [val for val in ps if val.split(':')[0] == 'Statewide order' or val.split(':')[0] == 'Citywide order'or val.split(':')[0] == 'Territory-wide order']
     
-    def mask_cleaner(val):
-        if val == 'Entire State' or val == 'Entire Territory':
-            return 'Yes'
-        elif val == 'No':
-            return val
+    def clean_mandates(ls):
+    
+        clean_mandates = []
+    
+        for string in mandates:
+        
+            s_str = string.split()
+        
+            if len(s_str) == 3:
+                new_str = '{}'.format(s_str[2])
+                clean_mandates.append(new_str)
+        
+            else:
+                new_str = '{} ({} {})'.format(s_str[2][:3], s_str[4].title(), s_str[5].title())
+                clean_mandates.append(new_str)
+            
+        return clean_mandates
+
+    cm = clean_mandates(mandates)
+    
+    state_list = []
+
+    for heading in mask_html.find_all('h4'):
+        if len(state_list) == 52:
+            break
         else:
-            return 'Some Parts'
+            state_list.append(heading.text.strip())
     
-    mask_data['Statewide Mask Requirement'] = mask_data['Masks Required?'].apply(mask_cleaner)
-    mask_data.drop(['Masks Required?','Requirement Date','Type of Requirement'], axis = 1, inplace = True) 
+    st = pd.DataFrame(state_list, columns=['State'])
+    st['State'] = st['State'].map(states)
+
+    md = pd.DataFrame(cm, columns = ['Statewide Mask Mandate'])
+
+    mask_data = pd.concat([st,md], axis = 1)
     
     return mask_data
 
