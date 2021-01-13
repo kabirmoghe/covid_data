@@ -167,6 +167,19 @@ def create_mask_data():
     
     mandates = [val for val in ps if val.split(':')[0] == 'Statewide order' or val.split(':')[0] == 'Citywide order'or val.split(':')[0] == 'Territory-wide order']
     
+    sps = []
+
+    for span in mask_html.find_all('span'):
+    
+        txt = span.text.strip()
+    
+        if txt != '' and txt != '|':
+            sps.append(txt)
+
+    date_txt = sps[14].split()
+        
+    date_updated = date_txt[5] + ' ' + date_txt[6] + ' ' + date_txt[7]
+    
     def clean_mandates(ls):
     
         clean_mandates = []
@@ -198,7 +211,7 @@ def create_mask_data():
     st = pd.DataFrame(state_list, columns=['State'])
     st['State'] = st['State'].map(states)
 
-    md = pd.DataFrame(cm, columns = ['Statewide Mask Mandate'])
+    md = pd.DataFrame(cm, columns = ['Statewide Mask Mandate (Updated {})'.format(date_updated)])
 
     mask_data = pd.concat([st,md], axis = 1)
     
